@@ -1,27 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
 
 const MusicPlayer = (props) => {
+  // songs array
   const songs = ['hey', 'summer', 'ukulele', 'welcome'];
 
   // song index state
   let songIndex = useRef(0);
-  const [songz, updateSongz] = useState({
+
+  // song state
+  const [song, updatesong] = useState({
     title: songs[songIndex.current],
     img: process.env.PUBLIC_URL + `images/${songs[songIndex.current]}.jpg`,
   });
 
-  let { title, img } = songz;
+  let { title, img } = song;
 
   //audio useRef setup
-  const audioinit =
+  const audioInit =
     process.env.PUBLIC_URL + `music/${songs[songIndex.current]}.mp3`;
-  let audio = useRef(new Audio(audioinit));
+  let audio = useRef(new Audio(audioInit));
 
-  // play/on/off set up
+  // Track if Song is playing or off.
   const [playState, updatePlayState] = useState(false);
 
-  let progressPercent = useRef(0);
+  let progressPercentRef = useRef(0);
+
+  //function loadSong
+  function loadSong(selectedSong) {
+    audio.current.src = process.env.PUBLIC_URL + `music/${selectedSong}.mp3`;
+  }
 
   function pausePlay() {
     if (playState) {
@@ -30,13 +37,13 @@ const MusicPlayer = (props) => {
     } else {
       updatePlayState(true);
       audio.current.play();
-      console.log(progressPercent);
+      console.log(progressPercentRef);
     }
   }
 
   function nextSong() {
     loadSong(songs[songIndex.current]);
-    updateSongz({
+    updatesong({
       title: songs[songIndex.current],
       img: process.env.PUBLIC_URL + `images/${songs[songIndex.current]}.jpg`,
     });
@@ -44,37 +51,57 @@ const MusicPlayer = (props) => {
       audio.current.play();
     }
   }
-  //function loadSong
-  function loadSong(selectedSong) {
-    // title = selectedSong;
-    audio.current.src = process.env.PUBLIC_URL + `music/${selectedSong}.mp3`;
-    // img = process.env.PUBLIC_URL + `images/${selectedSong}.jpg`;
-  }
 
+  // event listenter to track the timeupdate
   audio.current.addEventListener('timeupdate', updateProgress);
 
   function updateProgress(e) {
     const { duration, currentTime } = e.srcElement;
     const percentage = (currentTime / duration) * 100;
-    progressPercent.current = percentage;
+    if (percentage) {
+      progressPercentRef.current = percentage;
+    }
   }
 
-  const [fakePrecent, setFakePercent] = useState(0); // default value can be anything you want
+  // state to update the song progress %
+  const [progressPercent, setprogressPercent] = useState(0);
+
+  // hook to fire off and re-renter the progress componenet every 1 second.
+  // using SetProgressPercent directly renders many times and leads to errors.
+  // This was introduced as a fix. Might not be the most optimal fix, however
+  // it is stable fix and the componenet functions as desired.
 
   useEffect(() => {
-    setTimeout(() => setFakePercent(progressPercent.current), 1000);
+    setTimeout(() => setprogressPercent(progressPercentRef.current), 500);
   });
+
+  const ref = useRef(null);
+
+  function setProgress(e) {
+    const width = ref.current.clientWidth;
+    const clickX = e.nativeEvent.offsetX;
+    const duration = audio.current.duration;
+
+    audio.current.currentTime = (clickX / width) * duration;
+  }
 
   return (
     <div className='music-player'>
       <div className={playState ? 'music-container play' : 'music-container'}>
         <div className='music-info'>
           <h4 id='title'>{title}</h4>
-          <div className='progress-container'>
-            <div style={{ width: fakePrecent }} className='progress'></div>
+          <div
+            ref={ref}
+            onClick={(e) => setProgress(e)}
+            className='progress-container'
+          >
+            <div
+              style={{ width: progressPercent + '%' }}
+              className='progress'
+            ></div>
           </div>
         </div>
-        {/* <audio src={audioSrc} id='audio'></audio> */}
+
         <div className='img-container'>
           <img src={img} alt='music-cover' id='cover' />
         </div>
@@ -121,7 +148,5 @@ const MusicPlayer = (props) => {
     </div>
   );
 };
-
-MusicPlayer.propTypes = {};
 
 export default MusicPlayer;
