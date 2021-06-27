@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+//this is a music player component..
+
 const MusicPlayer = (props) => {
   // songs array
+  // This can be changed depending on the song titles saved
   const songs = ['hey', 'summer', 'ukulele', 'welcome'];
 
   // song index state
   let songIndex = useRef(0);
+
 
   // song state
   const [song, updatesong] = useState({
